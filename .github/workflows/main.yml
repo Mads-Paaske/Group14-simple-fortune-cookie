@@ -1,12 +1,33 @@
 name: pipeline
-on: push
-jobs: 
-  tests:
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build and Test
     runs-on: ubuntu-22.04
+
     steps:
-      - name: locate-frontend
-        run: cd frontend
-      - name: build-frontend
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.16'
+
+      - name: Build backend
+        working-directory: backend
+        run: go build 
+
+      - name: Build frontend
+        working-directory: frontend
         run: go build frontend
-      - name: build-frontend
-        run: go test 
+
+      - name: Test frontend
+        working-directory: frontend
+        run: go test -v ./...
