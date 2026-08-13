@@ -12,6 +12,8 @@ FROM alpine:3.19
 
 WORKDIR /app
 COPY --from=builder /frontend .
+COPY --from=builder /app/static ./static
+COPY --from=builder /app/templates ./templates
 
 EXPOSE 8080
 ENTRYPOINT ["./frontend"]
