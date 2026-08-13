@@ -69,3 +69,27 @@ jobs:
           context: ./frontend
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ghcr.io/${{ steps.lower.outputs.owner }}/fortune-frontend:latest
+
+  deploy:
+    name: Deploy to Kubernetes
+    needs: push-images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+ 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+ 
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+ 
+      - name: Write kubeconfig to disk
+        run: echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+ 
+      - name: Apply manifests
+        run: kubectl --kubeconfig kubeconfig apply -f backend/k8s/backend-manifest -f frontend/k8s/backend-manifest
+ 
+      - name: Force fresh pods
+        run: |
+          kubectl --kubeconfig kubeconfig delete pods -l app=backend,version=v1
+          kubectl --kubeconfig kubeconfig delete pods -l app=frontend,version=v1
