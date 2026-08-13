@@ -1,0 +1,12 @@
+name: pipeline
+on: push
+jobs: 
+  tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: locate-frontend
+        run: cd frontend
+      - name: build-frontend
+        run: go build frontend
+      - name: build-frontend
+        run: go test 
