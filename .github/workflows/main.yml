@@ -87,7 +87,7 @@ jobs:
         run: echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
  
       - name: Apply manifests
-        run: kubectl --kubeconfig kubeconfig apply -f backend/k8s/backend-manifest -f frontend/k8s/frontend-manifest
+        run: kubectl --kubeconfig kubeconfig apply -f backend/k8s/redis.yaml -f backend/k8s/backend-manifest -f frontend/k8s/frontend-manifest
  
       - name: Force fresh pods
         run: |
