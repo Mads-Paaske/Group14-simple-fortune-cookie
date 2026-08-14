@@ -23,11 +23,9 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
-          env:
-            - name: BACKEND_DNS
-              value: "backend-v1"
-            - name: BACKEND_PORT
-              value: "9000"
+          envFrom:
+            - configMapRef:
+                name: frontend-config
           resources:
             requests:
               cpu: "100m"
