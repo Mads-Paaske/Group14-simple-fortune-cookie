@@ -130,14 +130,17 @@ jobs:
           test_frontend_config="frontend-config-test-${suffix}"
 
           manifests=$(mktemp -d)
-          cp backend/k8s/backend-configmap.yaml frontend/k8s/frontend-configmap.yaml backend/k8s/backend-manifest frontend/k8s/frontend-manifest "$manifests"
+          cp backend/k8s/backend-configmap.yaml "$manifests"/backend-configmap.yaml
+          cp frontend/k8s/frontend-configmap.yaml "$manifests"/frontend-configmap.yaml
+          cp backend/k8s/backend-manifest "$manifests"/backend-manifest.yaml
+          cp frontend/k8s/frontend-manifest "$manifests"/frontend-manifest.yaml
 
           sed -i \
             -e "s|backend-config|${test_backend_config}|g" \
             -e "s|backend-v1|${test_backend}|g" \
             -e "s|version: v1|version: test|g" \
             -e "s|replicas: 2|replicas: 1|g" \
-            "$manifests"/backend-configmap.yaml "$manifests"/backend-manifest
+            "$manifests"/backend-configmap.yaml "$manifests"/backend-manifest.yaml
 
           sed -i \
             -e "s|frontend-config|${test_frontend_config}|g" \
@@ -145,7 +148,7 @@ jobs:
             -e "s|version: v1|version: test|g" \
             -e "s|replicas: 2|replicas: 1|g" \
             -e "s|BACKEND_DNS.*|BACKEND_DNS: \"${test_backend}\"|g" \
-            "$manifests"/frontend-configmap.yaml "$manifests"/frontend-manifest
+            "$manifests"/frontend-configmap.yaml "$manifests"/frontend-manifest.yaml
 
           port_forward_pid=
           trap 'kill "$port_forward_pid" 2>/dev/null || true; kubectl --kubeconfig kubeconfig delete -f "$manifests" --ignore-not-found --wait=false || true' EXIT
