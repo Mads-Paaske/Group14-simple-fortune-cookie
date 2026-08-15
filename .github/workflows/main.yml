@@ -130,6 +130,7 @@ jobs:
           test_frontend_config="frontend-config-test-${suffix}"
 
           manifests=$(mktemp -d)
+          cp backend/k8s/redis.yaml "$manifests"/redis.yaml
           cp backend/k8s/backend-configmap.yaml "$manifests"/backend-configmap.yaml
           cp frontend/k8s/frontend-configmap.yaml "$manifests"/frontend-configmap.yaml
           cp backend/k8s/backend-manifest "$manifests"/backend-manifest.yaml
@@ -152,7 +153,7 @@ jobs:
 
           frontend_pid=
           backend_pid=
-          trap 'echo "--- backend-test pod logs ---"; kubectl --kubeconfig kubeconfig logs -l app=backend,version=test --tail=50 || true; echo "--- backend-test pod describe ---"; kubectl --kubeconfig kubeconfig describe pods -l app=backend,version=test || true; kill "$frontend_pid" "$backend_pid" 2>/dev/null || true; kubectl --kubeconfig kubeconfig delete -f "$manifests" --ignore-not-found --wait=false || true' EXIT
+          trap 'kill "$frontend_pid" "$backend_pid" 2>/dev/null || true; kubectl --kubeconfig kubeconfig delete -f "$manifests" --ignore-not-found --wait=false || true' EXIT
 
           kubectl --kubeconfig kubeconfig apply -f "$manifests"
           kubectl --kubeconfig kubeconfig rollout status "deployment/${test_frontend}" --timeout=180s
