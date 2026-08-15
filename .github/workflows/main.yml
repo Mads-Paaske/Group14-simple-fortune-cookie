@@ -150,14 +150,20 @@ jobs:
             -e "s|BACKEND_DNS.*|BACKEND_DNS: \"${test_backend}\"|g" \
             "$manifests"/frontend-configmap.yaml "$manifests"/frontend-manifest.yaml
 
-          port_forward_pid=
-          trap 'kill "$port_forward_pid" 2>/dev/null || true; kubectl --kubeconfig kubeconfig delete -f "$manifests" --ignore-not-found --wait=false || true' EXIT
+          frontend_pid=
+          backend_pid=
+          trap 'kill "$frontend_pid" "$backend_pid" 2>/dev/null || true; kubectl --kubeconfig kubeconfig delete -f "$manifests" --ignore-not-found --wait=false || true' EXIT
 
           kubectl --kubeconfig kubeconfig apply -f "$manifests"
           kubectl --kubeconfig kubeconfig rollout status "deployment/${test_frontend}" --timeout=180s
+          kubectl --kubeconfig kubeconfig rollout status "deployment/${test_backend}" --timeout=180s
 
           kubectl --kubeconfig kubeconfig port-forward "service/${test_frontend}" 8080:80 >/dev/null 2>&1 &
-          port_forward_pid=$!
+          frontend_pid=$!
+
+          kubectl --kubeconfig kubeconfig port-forward "service/${test_backend}" 9000:9000 >/dev/null 2>&1 &
+          backend_pid=$!
 
           chmod +x scripts/smoketest.sh
           ./scripts/smoketest.sh http://localhost:8080
+          ./scripts/smoketest.sh http://localhost:9000
