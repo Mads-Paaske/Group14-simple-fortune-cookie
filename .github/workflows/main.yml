@@ -120,8 +120,8 @@ jobs:
         run: |
           kubectl --kubeconfig kubeconfig port-forward service/frontend-test 8080:80 &
           sleep 10
-          chmod +x scripts/test.sh
-          ./scripts/test.sh http://localhost:8080/healthz
+          chmod +x scripts/smoketest.sh
+          ./scripts/smoketest.sh http://localhost:8080/healthz
 
       - name: Tear down test version
         if: always()
