@@ -152,7 +152,7 @@ jobs:
 
           frontend_pid=
           backend_pid=
-          trap 'kill "$frontend_pid" "$backend_pid" 2>/dev/null || true; kubectl --kubeconfig kubeconfig delete -f "$manifests" --ignore-not-found --wait=false || true' EXIT
+          trap 'echo "--- backend-test pod logs ---"; kubectl --kubeconfig kubeconfig logs -l app=backend,version=test --tail=50 || true; echo "--- backend-test pod describe ---"; kubectl --kubeconfig kubeconfig describe pods -l app=backend,version=test || true; kill "$frontend_pid" "$backend_pid" 2>/dev/null || true; kubectl --kubeconfig kubeconfig delete -f "$manifests" --ignore-not-found --wait=false || true' EXIT
 
           kubectl --kubeconfig kubeconfig apply -f "$manifests"
           kubectl --kubeconfig kubeconfig rollout status "deployment/${test_frontend}" --timeout=180s
