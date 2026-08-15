@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-test
+  labels:
+    app: frontend
+    version: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+      version: test
+  template:
+    metadata:
+      labels:
+        app: frontend
+        version: test
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/mads-paaske/fortune-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: BACKEND_DNS
+              value: "backend-test"
+            - name: BACKEND_PORT
+              value: "9000"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-test
+  labels:
+    app: frontend
+    version: test
+spec:
+  selector:
+    app: frontend
+    version: test
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP
