@@ -87,9 +87,44 @@ jobs:
         run: echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
  
       - name: Apply manifests
-        run: kubectl --kubeconfig kubeconfig apply -f backend/k8s/redis.yaml -f backend/k8s/backend-configmap.yaml -f backend/k8s/backend-manifest -f frontend/k8s/frontend-configmap.yaml -f frontend/k8s/frontend-manifest
+        run: kubectl --kubeconfig kubeconfig apply -f backend/k8s/redis.yaml -f backend/k8s/backend-manifest -f frontend/k8s/frontend-manifest
  
       - name: Force fresh pods
         run: |
           kubectl --kubeconfig kubeconfig delete pods -l app=backend,version=v1
           kubectl --kubeconfig kubeconfig delete pods -l app=frontend,version=v1
+
+  test-deploy:
+    name: Deploy and Test (isolated test version)
+    needs: push-images
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Write kubeconfig to disk
+        run: echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+
+      - name: Deploy test version
+        run: |
+          kubectl --kubeconfig kubeconfig apply -f backend/k8s/backend-test-manifest
+          kubectl --kubeconfig kubeconfig apply -f frontend/k8s/frontend-test-manifest
+          kubectl --kubeconfig kubeconfig rollout status deployment/backend-test
+          kubectl --kubeconfig kubeconfig rollout status deployment/frontend-test
+
+      - name: Test the test version
+        run: |
+          kubectl --kubeconfig kubeconfig port-forward service/frontend-test 8080:80 &
+          sleep 10
+          chmod +x scripts/test.sh
+          ./scripts/test.sh http://localhost:8080/healthz
+
+      - name: Tear down test version
+        if: always()
+        run: |
+          kubectl --kubeconfig kubeconfig delete -f backend/k8s/backend-test-manifest --ignore-not-found
+          kubectl --kubeconfig kubeconfig delete -f frontend/k8s/frontend-test-manifest --ignore-not-found
