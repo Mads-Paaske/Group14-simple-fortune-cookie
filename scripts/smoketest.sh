@@ -1,15 +1,19 @@
-set -e
+#!/usr/bin/env bash
+set -eu
 
-URL="${1:-http://localhost:8080/healthz}"
+# Tester om applikationen svarer. Dette er en tollgate:
+# scriptet fejler (exit 1), hvis appen ikke svarer korrekt inden for tidsgrænsen.
+# Brug: ./scripts/smoketest.sh <base-url>
 
-echo "Test is starting (debug to make sure we start it)"
+base_url="${1%/}"
 
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
-
-if [ "$STATUS" = "200" ]; then
-  echo "Test passed $STATUS"
-else
-  echo "Test didnt pass $STATUS"
+if ! response=$(curl --fail --silent \
+    --connect-timeout 5 --max-time 10 \
+    --retry 10 --retry-delay 2 --retry-connrefused \
+    "$base_url/healthz"); then
+    echo "smoke-test failed: $base_url/healthz" >&2
+    exit 1
 fi
 
+echo "smoke-test succeded: $base_url/healthz"
 exit 0
